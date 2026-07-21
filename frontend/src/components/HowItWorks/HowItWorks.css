@@ -1,0 +1,84 @@
+.how-it-works-section {
+  padding: 4rem 0;
+  background-color: rgba(235, 245, 238, 0.4);
+  border-top: 1px solid #EBF5EE;
+  border-bottom: 1px solid #EBF5EE;
+}
+
+.how-it-works-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.how-it-works-title {
+  font-size: 2.2rem;
+  color: #0F172A;
+  font-weight: 800;
+}
+
+.how-it-works-subtitle {
+  color: #64748B;
+  font-size: 1.05rem;
+  margin-top: 0.5rem;
+}
+
+.how-it-works-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 2rem;
+  position: relative;
+}
+
+.step-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+.step-icon-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  border: 2px solid #D0E8D7;
+  color: #2E7D47;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 8px 20px rgba(46, 125, 71, 0.08);
+}
+
+.step-number-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #2E7D47;
+  color: #FFF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFF;
+}
+
+.step-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #0F172A;
+}
+
+.step-desc {
+  font-size: 0.9rem;
+  color: #64748B;
+  line-height: 1.6;
+  max-width: 240px;
+}

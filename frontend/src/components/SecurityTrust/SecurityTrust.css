@@ -1,0 +1,151 @@
+.security-trust-section {
+  padding: 4rem 0;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
+}
+
+.security-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 3rem;
+  align-items: center;
+}
+
+.security-trust-badge {
+  margin-bottom: 1rem;
+}
+
+.security-trust-title {
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin-bottom: 1.2rem;
+  line-height: 1.2;
+}
+
+.security-trust-desc {
+  color: #64748B;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.security-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.sec-feature-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.sec-check-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #DCFCE7;
+  color: #15803D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sec-feature-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sec-feature-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sec-tag-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2E7D47;
+  background-color: #EBF5EE;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+.sec-feature-desc {
+  font-size: 0.9rem;
+  color: #64748B;
+  margin: 0.2rem 0 0;
+  line-height: 1.5;
+}
+
+.security-shield-card {
+  padding: 2.5rem;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #FAFDFB 0%, #EBF5EE 100%);
+  border: 1px solid #C8E6C9;
+  box-shadow: 0 20px 40px rgba(46, 125, 71, 0.1);
+}
+
+.shield-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.shield-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background-color: #2E7D47;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shield-card-title {
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+.shield-card-subtitle {
+  font-size: 0.85rem;
+  color: #64748B;
+  margin: 0;
+}
+
+.shield-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shield-item-row {
+  background-color: #FFFFFF;
+  padding: 1rem 1.2rem;
+  border-radius: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.shield-item-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.shield-item-status {
+  color: #10B981;
+  font-weight: 700;
+  font-size: 0.85rem;
+}

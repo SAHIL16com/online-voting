@@ -1,0 +1,130 @@
+.hero-section {
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.hero-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-badge {
+  margin-bottom: 1.5rem;
+}
+
+.hero-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10B981;
+  display: inline-block;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.25rem;
+  line-height: 1.15;
+  color: #0F172A;
+}
+
+.hero-title-accent {
+  color: #2E7D47;
+  position: relative;
+  display: inline-block;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: #475569;
+  max-width: 580px;
+  margin-bottom: 2.2rem;
+  line-height: 1.65;
+}
+
+.hero-cta-group {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-btn-primary {
+  padding: 0.9rem 2.2rem;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px rgba(46, 125, 71, 0.35);
+}
+
+.hero-btn-outline {
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.hero-trust-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #E2E8F0;
+  width: 100%;
+  max-width: 480px;
+}
+
+.hero-avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.hero-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.hero-avatar.avatar-green {
+  background-color: #DCFCE7;
+  color: #15803D;
+}
+
+.hero-avatar.avatar-blue {
+  background-color: #DBEAFE;
+  color: #1E40AF;
+  margin-left: -10px;
+}
+
+.hero-avatar.avatar-purple {
+  background-color: #F3E8FF;
+  color: #6B21A8;
+  margin-left: -10px;
+}
+
+.hero-trust-text {
+  font-size: 0.88rem;
+  color: #64748B;
+  margin: 0;
+}
