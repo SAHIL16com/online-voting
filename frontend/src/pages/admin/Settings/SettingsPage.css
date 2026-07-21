@@ -1,0 +1,155 @@
+.settings-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.settings-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.settings-main-card {
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  border: 1px solid #EEF2F6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.settings-tabs-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0 2rem;
+  border-bottom: 1px solid #F1F5F9;
+  background-color: #FFFFFF;
+}
+
+.settings-tab-btn {
+  padding: 1.2rem 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #64748B;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.settings-tab-btn:hover {
+  color: #0F172A;
+}
+
+.settings-tab-btn.active {
+  color: #2E7D47;
+  font-weight: 700;
+}
+
+.settings-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #2E7D47;
+  border-radius: 3px 3px 0 0;
+}
+
+.settings-content-body {
+  padding: 2.5rem;
+  max-width: 600px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  font-size: 0.9rem;
+  color: #0F172A;
+  outline: none;
+  background-color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: #2E7D47;
+  box-shadow: 0 0 0 3px rgba(46, 125, 71, 0.1);
+}
+
+.save-settings-btn {
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  border: none;
+  background-color: #2E7D47;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(46, 125, 71, 0.2);
+}
+
+.save-settings-btn:hover {
+  background-color: #236337;
+}
+
+.danger-zone-card {
+  border: 1px solid #FEE2E2;
+  background-color: #FEF2F2;
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.danger-zone-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #EF4444;
+  margin: 0;
+}
+
+.danger-zone-desc {
+  font-size: 0.85rem;
+  color: #991B1B;
+  margin: 0;
+}
+
+.danger-action-btn {
+  align-self: flex-start;
+  padding: 0.65rem 1.2rem;
+  border-radius: 10px;
+  border: none;
+  background-color: #EF4444;
+  color: #FFFFFF;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-action-btn:hover {
+  background-color: #DC2626;
+}
