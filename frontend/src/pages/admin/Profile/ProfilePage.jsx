@@ -1,33 +1,95 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../../context/AuthContext';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
   const photoInputRef = useRef(null);
+  const { currentUser, adminUser, updateProfile, uploadAvatar } = useAuth();
 
   const [profileData, setProfileData] = useState({
-    fullName: 'Admin User',
-    email: 'admin@votesecure.com',
-    phone: '+91 98765 43210',
-    address: '123, Green Street, New Delhi, India',
-    photo: '/candidate_rahul.png'
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    photo: ''
   });
 
-  const handlePhotoUpload = (e) => {
+  const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    setProfileData({
+      fullName: currentUser?.fullName || adminUser.name || '',
+      email: currentUser?.email || adminUser.email || '',
+      phone: currentUser?.phone || adminUser.phone || '',
+      address: currentUser?.address || adminUser.address || '',
+      photo: currentUser?.avatar || adminUser.avatar || '/candidate_rahul.png'
+    });
+  }, [currentUser, adminUser]);
+
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setProfileData((prev) => ({ ...prev, photo: url }));
-    }
+    if (!file) return;
+
+    // Convert file to Base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64Image = reader.result;
+      setUploadingPhoto(true);
+      setStatusMsg({ type: 'info', text: 'Uploading photo to Cloudinary...' });
+
+      try {
+        const updated = await uploadAvatar(base64Image);
+        setProfileData((prev) => ({ ...prev, photo: updated.avatar }));
+        setStatusMsg({ type: 'success', text: 'Photo uploaded to Cloudinary and saved to DB!' });
+      } catch (err) {
+        setStatusMsg({ type: 'error', text: err.message || 'Photo upload failed.' });
+      } finally {
+        setUploadingPhoto(false);
+      }
+    };
   };
 
-  const handleProfileSubmit = (e) => {
+  const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    alert('Profile updated successfully!');
+    setLoading(true);
+    setStatusMsg({ type: '', text: '' });
+
+    try {
+      await updateProfile({
+        fullName: profileData.fullName,
+        email: profileData.email,
+        phone: profileData.phone,
+        address: profileData.address
+      });
+      setStatusMsg({ type: 'success', text: 'Profile updated & saved to Database!' });
+    } catch (err) {
+      setStatusMsg({ type: 'error', text: err.message || 'Failed to update profile' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="profile-page-container">
-      <h1 className="profile-title">PROFILE</h1>
+      <h1 className="profile-title">ADMIN PROFILE</h1>
+
+      {statusMsg.text && (
+        <div className={`auth-error-alert ${statusMsg.type === 'success' ? 'status-success' : ''}`} style={{
+          backgroundColor: statusMsg.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          borderColor: statusMsg.type === 'success' ? '#86EFAC' : '#FCA5A5',
+          color: statusMsg.type === 'success' ? '#166534' : '#991B1B',
+          padding: '0.8rem 1rem',
+          borderRadius: '12px',
+          marginBottom: '1rem',
+          textAlign: 'center',
+          fontWeight: 600
+        }}>
+          {statusMsg.text}
+        </div>
+      )}
 
       <div className="profile-main-card">
         <div className="profile-left-col">
@@ -38,15 +100,16 @@ const ProfilePage = () => {
               className="profile-avatar-img"
             />
           </div>
-          <h3 className="profile-user-name">{profileData.fullName}</h3>
+          <h3 className="profile-user-name">{profileData.fullName || 'Admin User'}</h3>
           <span className="profile-user-role">Super Administrator</span>
 
           <button
             type="button"
             onClick={() => photoInputRef.current && photoInputRef.current.click()}
             className="change-photo-btn"
+            disabled={uploadingPhoto}
           >
-            Change Photo
+            {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
           </button>
           <input
             ref={photoInputRef}
@@ -100,8 +163,8 @@ const ProfilePage = () => {
             />
           </div>
 
-          <button type="submit" className="save-changes-btn">
-            Save Changes
+          <button type="submit" className="save-changes-btn" disabled={loading}>
+            {loading ? 'Saving to Database...' : 'Save Changes'}
           </button>
         </form>
       </div>

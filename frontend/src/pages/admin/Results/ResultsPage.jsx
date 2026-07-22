@@ -78,7 +78,7 @@ const ResultsPage = () => {
           <h2 className="leading-name">{leadingCandidate?.name}</h2>
           <p className="leading-dept">{leadingCandidate?.department}</p>
 
-          <span className="leading-votes-count">{leadingCandidate?.displayVotes} Votes</span>
+          <span className="leading-votes-count">{leadingCandidate?.displayVotes}</span>
           <span className="leading-percent">{leadingCandidate?.percentage}</span>
         </div>
 

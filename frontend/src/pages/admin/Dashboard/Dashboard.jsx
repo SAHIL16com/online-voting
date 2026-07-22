@@ -1,11 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useElections } from '../../../context/ElectionsContext';
+import { useCandidates } from '../../../context/CandidatesContext';
+import { useVoters } from '../../../context/VotersContext';
+import { useAuth } from '../../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const { elections, fetchElections } = useElections();
+  const { candidates, fetchCandidates } = useCandidates();
+  const { voters, fetchVoters } = useVoters();
+  const { token } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const currentToken = token || localStorage.getItem('voting_token');
+    if (currentToken) {
+      if (fetchElections) fetchElections();
+      if (fetchCandidates) fetchCandidates();
+      if (fetchVoters) fetchVoters(currentToken);
+    }
+  }, [token]);
+
+  // Calculate stats dynamically
+  const totalElections = elections.length;
+  const totalCandidates = candidates.length;
+  const totalVoters = voters.length;
+  const totalVotesCast = candidates.reduce((sum, c) => sum + (c.votes || 0), 0);
+
   const stats = [
     {
       label: 'Total Elections',
-      value: '0',
+      value: totalElections.toString(),
       iconClass: 'icon-green',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,7 +44,7 @@ const Dashboard = () => {
     },
     {
       label: 'Total Candidates',
-      value: '0',
+      value: totalCandidates.toString(),
       iconClass: 'icon-yellow',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -31,7 +57,7 @@ const Dashboard = () => {
     },
     {
       label: 'Total Voters',
-      value: '0',
+      value: totalVoters.toString(),
       iconClass: 'icon-emerald',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,8 +69,8 @@ const Dashboard = () => {
       )
     },
     {
-      label: 'Total Votes',
-      value: '0',
+      label: 'Total Votes Cast',
+      value: totalVotesCast.toString(),
       iconClass: 'icon-purple',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -54,6 +80,82 @@ const Dashboard = () => {
       )
     }
   ];
+
+  const getRelativeTime = (dateString) => {
+    if (!dateString) return 'Just now';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
+  const getSystemActivities = () => {
+    const list = [];
+
+    elections.forEach((el) => {
+      list.push({
+        id: `el-${el._id}`,
+        title: 'New Election Created',
+        desc: `Election "${el.name}" was initialized in the database.`,
+        date: el.createdAt,
+        color: '#16A34A',
+        bgColor: '#DCFCE7',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+          </svg>
+        )
+      });
+    });
+
+    candidates.forEach((cand) => {
+      list.push({
+        id: `cand-${cand._id}`,
+        title: 'Candidate Registered',
+        desc: `Candidate "${cand.name}" was registered under "${cand.partyGroup || 'General'}".`,
+        date: cand.createdAt,
+        color: '#CA8A04',
+        bgColor: '#FEF9C3',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        )
+      });
+    });
+
+    voters.forEach((vot) => {
+      list.push({
+        id: `vot-${vot._id || vot.id}`,
+        title: 'Voter Registered',
+        desc: `Voter "${vot.name}" (ID: ${vot.voterId}) account was created.`,
+        date: vot.createdAt || vot.date,
+        color: '#0D9488',
+        bgColor: '#CCFBF1',
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+          </svg>
+        )
+      });
+    });
+
+    // Return top 5 activities sorted by date
+    return list.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  };
+
+  const recentActivities = getSystemActivities();
 
   return (
     <div className="dashboard-container">
@@ -73,93 +175,36 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="dashboard-content-grid">
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h3 className="card-title">Elections Overview</h3>
-            <div className="chart-legend">
-              <div className="legend-item">
-                <span className="legend-dot green-dot" />
-                <span>Elections</span>
-              </div>
-              <div className="legend-item">
-                <span className="legend-dot emerald-dot" />
-                <span>Votes</span>
-              </div>
+      <div className="dashboard-content-single" style={{ display: 'grid', gridTemplateColumns: '1fr', marginTop: '1rem' }}>
+        <div className="dashboard-card" style={{ padding: '2.2rem' }}>
+          <div className="card-header" style={{ borderBottom: '1px solid #EEF2F6', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
+            <div>
+              <h3 className="card-title" style={{ fontSize: '1.25rem', fontWeight: 800 }}>Recent Activities</h3>
+              <p style={{ color: '#64748B', fontSize: '0.85rem', margin: '4px 0 0', fontWeight: 500 }}>Live monitoring logs of elections, candidates and voter registration events.</p>
             </div>
           </div>
 
-          <div className="chart-svg-container">
-            <svg viewBox="0 0 600 220" width="100%" height="100%" preserveAspectRatio="none">
-              <line x1="40" y1="40" x2="580" y2="40" stroke="#F1F5F9" strokeWidth="1"/>
-              <line x1="40" y1="90" x2="580" y2="90" stroke="#F1F5F9" strokeWidth="1"/>
-              <line x1="40" y1="140" x2="580" y2="140" stroke="#F1F5F9" strokeWidth="1"/>
-              <line x1="40" y1="190" x2="580" y2="190" stroke="#F1F5F9" strokeWidth="1"/>
-
-              <text x="15" y="45" fontSize="11" fill="#94A3B8">2K</text>
-              <text x="15" y="95" fontSize="11" fill="#94A3B8">1.5K</text>
-              <text x="15" y="145" fontSize="11" fill="#94A3B8">1K</text>
-              <text x="15" y="195" fontSize="11" fill="#94A3B8">0</text>
-
-              <text x="60" y="215" fontSize="11" fill="#94A3B8">Jan</text>
-              <text x="160" y="215" fontSize="11" fill="#94A3B8">Feb</text>
-              <text x="260" y="215" fontSize="11" fill="#94A3B8">Mar</text>
-              <text x="360" y="215" fontSize="11" fill="#94A3B8">Apr</text>
-              <text x="460" y="215" fontSize="11" fill="#94A3B8">May</text>
-              <text x="560" y="215" fontSize="11" fill="#94A3B8">Jun</text>
-
-              <polyline
-                fill="none"
-                stroke="#16A34A"
-                strokeWidth="2.5"
-                points="60,190 160,120 260,140 360,80 460,110 560,70"
-              />
-              <polyline
-                fill="none"
-                stroke="#059669"
-                strokeWidth="2.5"
-                points="60,190 160,150 260,170 360,130 460,150 560,110"
-              />
-
-              <circle cx="60" cy="190" r="4" fill="#16A34A"/>
-              <circle cx="160" cy="120" r="4" fill="#16A34A"/>
-              <circle cx="260" cy="140" r="4" fill="#16A34A"/>
-              <circle cx="360" cy="80" r="4" fill="#16A34A"/>
-              <circle cx="460" cy="110" r="4" fill="#16A34A"/>
-              <circle cx="560" cy="70" r="4" fill="#16A34A"/>
-
-              <circle cx="60" cy="190" r="4" fill="#059669"/>
-              <circle cx="160" cy="150" r="4" fill="#059669"/>
-              <circle cx="260" cy="170" r="4" fill="#059669"/>
-              <circle cx="360" cy="130" r="4" fill="#059669"/>
-              <circle cx="460" cy="150" r="4" fill="#059669"/>
-              <circle cx="560" cy="110" r="4" fill="#059669"/>
-            </svg>
-          </div>
-        </div>
-
-        <div className="dashboard-card">
-          <div className="card-header">
-            <h3 className="card-title">Recent Activity</h3>
+          <div className="activity-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {recentActivities.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>No dynamic activities recorded.</div>
+            ) : (
+              recentActivities.map((act) => (
+                <div key={act.id} className="activity-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '1.25rem', borderBottom: '1px solid #F8FAFC', paddingBottom: '1.1rem' }}>
+                  <div className="activity-icon-wrapper" style={{ backgroundColor: act.bgColor, color: act.color, width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justify: 'center', flexShrink: 0 }}>
+                    {act.icon}
+                  </div>
+                  <div className="activity-details" style={{ flex: 1 }}>
+                    <p className="activity-title-text" style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>{act.title}</p>
+                    <p className="activity-sub-text" style={{ fontSize: '0.82rem', color: '#64748B', margin: '3px 0 0' }}>{act.desc}</p>
+                  </div>
+                  <span className="activity-time" style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 500 }}>{getRelativeTime(act.date)}</span>
+                </div>
+              ))
+            )}
           </div>
 
-          <div className="activity-list">
-            <div className="activity-item">
-              <div className="activity-icon-wrapper" style={{ backgroundColor: '#DCFCE7', color: '#16A34A' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                </svg>
-              </div>
-              <div className="activity-details">
-                <p className="activity-title-text">System Initialized</p>
-                <p className="activity-sub-text">Admin panel ready for setup</p>
-              </div>
-              <span className="activity-time">Just now</span>
-            </div>
-          </div>
-
-          <button className="view-all-activity-btn">
-            View All Activity
+          <button onClick={() => navigate('/admin/activities')} className="view-all-activity-btn" style={{ marginTop: '1.8rem', width: '100%', py: '0.9rem', fontSize: '0.9rem', fontWeight: 800, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#FAFDFB', color: '#2E7D47', cursor: 'pointer', transition: 'all 0.2s ease' }}>
+            View All Activities Log
           </button>
         </div>
       </div>

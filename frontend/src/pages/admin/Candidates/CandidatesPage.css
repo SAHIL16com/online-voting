@@ -431,3 +431,53 @@
 .form-save-btn:hover {
   background-color: #236337;
 }
+
+/* Loading & Empty State styles */
+.candidates-loading, .candidates-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #64748B;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px dashed #E2E8F0;
+  border-radius: 20px;
+  background-color: #F8FAFC;
+}
+
+/* Mobile responsive media queries */
+@media (max-width: 640px) {
+  .candidates-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .candidates-search-box {
+    width: 100%;
+  }
+  .candidates-controls-right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .candidates-filter-select, .add-candidate-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .form-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .form-cancel-btn, .form-save-btn {
+    width: 100%;
+    text-align: center;
+  }
+  .add-candidate-form-layout {
+    gap: 1.5rem;
+  }
+  .photo-upload-dropzone {
+    height: 180px;
+  }
+  .candidates-grid {
+    grid-template-columns: 1fr;
+  }
+}

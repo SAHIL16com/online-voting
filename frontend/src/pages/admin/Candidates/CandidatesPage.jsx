@@ -1,8 +1,14 @@
 import React, { useState, useRef } from 'react';
+import { useCandidates } from '../../../context/CandidatesContext';
+import { useAuth } from '../../../context/AuthContext';
 import './CandidatesPage.css';
 
 const CandidatesPage = () => {
-  const [view, setView] = useState('list');
+  const { candidates, loading, addCandidate, updateCandidate, deleteCandidate } = useCandidates();
+  const { token } = useAuth();
+
+  const [view, setView] = useState('list'); // 'list', 'add', 'edit'
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [electionFilter, setElectionFilter] = useState('All Elections');
 
@@ -18,80 +24,97 @@ const CandidatesPage = () => {
     qualification: '',
     experience: '',
     biography: '',
-    photo: null
+    photo: ''
   });
-
-  const [candidates, setCandidates] = useState([
-    {
-      id: 1,
-      name: 'Priya Sharma',
-      department: 'Computer Science',
-      votes: '1,245 Votes',
-      percent: '40.5%',
-      progress: 40.5,
-      photo: '/candidate_priya.png',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Rahul Verma',
-      department: 'Mechanical',
-      votes: '987 Votes',
-      percent: '32.1%',
-      progress: 32.1,
-      photo: '/candidate_rahul.png',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Aman Patel',
-      department: 'Commerce',
-      votes: '654 Votes',
-      percent: '21.3%',
-      progress: 21.3,
-      photo: '/candidate_aman.png',
-      status: 'Active'
-    },
-    {
-      id: 4,
-      name: 'Neha Singh',
-      department: 'Science',
-      votes: '196 Votes',
-      percent: '6.1%',
-      progress: 6.1,
-      photo: '/candidate_neha.png',
-      status: 'Active'
-    }
-  ]);
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, photo: imageUrl }));
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setFormData((prev) => ({ ...prev, photo: reader.result }));
+      };
     }
   };
 
-  const handleSaveCandidate = (e) => {
+  const handleSymbolUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setFormData((prev) => ({ ...prev, partySymbol: reader.result }));
+      };
+    }
+  };
+
+  const handleEditClick = (cand) => {
+    setEditingId(cand._id);
+    setFormData({
+      fullName: cand.name,
+      gender: cand.gender || 'Select gender',
+      partyGroup: cand.department,
+      age: cand.age || '',
+      partySymbol: cand.partySymbol || '',
+      qualification: cand.qualification || '',
+      experience: cand.experience || '',
+      biography: cand.biography || '',
+      photo: cand.photo || ''
+    });
+    setView('edit');
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm('Are you sure you want to remove this candidate?')) {
+      try {
+        const currentToken = token || localStorage.getItem('voting_token');
+        await deleteCandidate(id, currentToken);
+        alert('Candidate deleted successfully!');
+      } catch (err) {
+        alert(err.message || 'Failed to delete candidate.');
+      }
+    }
+  };
+
+  const handleSaveCandidate = async (e) => {
     e.preventDefault();
     if (!formData.fullName) {
       alert('Please enter full name.');
       return;
     }
 
-    const newCandidate = {
-      id: Date.now(),
-      name: formData.fullName,
-      department: formData.partyGroup || 'General',
-      votes: '0 Votes',
-      percent: '0%',
-      progress: 0,
-      photo: formData.photo || '/candidate_priya.png',
-      status: 'Active'
-    };
+    try {
+      const currentToken = token || localStorage.getItem('voting_token');
+      const payload = {
+        name: formData.fullName,
+        gender: formData.gender,
+        partyGroup: formData.partyGroup,
+        age: formData.age ? Number(formData.age) : undefined,
+        partySymbol: formData.partySymbol,
+        qualification: formData.qualification,
+        experience: formData.experience,
+        biography: formData.biography,
+        photo: formData.photo
+      };
 
-    setCandidates([newCandidate, ...candidates]);
-    setView('list');
+      if (view === 'edit') {
+        await updateCandidate(editingId, payload, currentToken);
+        alert('Candidate details updated successfully!');
+      } else {
+        await addCandidate(payload, currentToken);
+        alert('Candidate created successfully!');
+      }
+
+      setView('list');
+      resetForm();
+    } catch (err) {
+      alert(err.message || 'Failed to save candidate.');
+    }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
     setFormData({
       fullName: '',
       gender: 'Select gender',
@@ -101,7 +124,7 @@ const CandidatesPage = () => {
       qualification: '',
       experience: '',
       biography: '',
-      photo: null
+      photo: ''
     });
   };
 
@@ -112,7 +135,7 @@ const CandidatesPage = () => {
   return (
     <div className="candidates-page-container">
       <h1 className="candidates-title">
-        {view === 'list' ? '5. CANDIDATE MANAGEMENT' : '6. ADD CANDIDATE'}
+        {view === 'list' ? '5. CANDIDATE MANAGEMENT' : view === 'edit' ? 'EDIT CANDIDATE' : '6. ADD CANDIDATE'}
       </h1>
 
       <div className="candidates-main-card">
@@ -145,47 +168,70 @@ const CandidatesPage = () => {
                   <option>Sports Head Election 2024</option>
                 </select>
 
-                <button onClick={() => setView('add')} className="add-candidate-btn">
+                <button onClick={() => { resetForm(); setView('add'); }} className="add-candidate-btn">
                   <span>+</span> Add Candidate
                 </button>
               </div>
             </div>
 
-            <div className="candidates-grid">
-              {filteredCandidates.map((item) => (
-                <div key={item.id} className="candidate-card-item">
-                  <div className="candidate-photo-wrapper">
-                    <img src={item.photo} alt={item.name} className="candidate-photo" />
+            {loading && candidates.length === 0 ? (
+              <div className="candidates-loading">Loading candidates...</div>
+            ) : filteredCandidates.length === 0 ? (
+              <div className="candidates-empty-state">No candidates found. Click "Add Candidate" to create one.</div>
+            ) : (
+              <div className="candidates-grid">
+                {filteredCandidates.map((item) => (
+                  <div key={item.id} className="candidate-card-item">
+                    <div className="candidate-photo-wrapper">
+                      <img src={item.photo} alt={item.name} className="candidate-photo" />
+                    </div>
+
+                    <h3 className="candidate-name-text">{item.name}</h3>
+                    <p className="candidate-dept-text">{item.department}</p>
+
+                    <span className="candidate-votes-value">{item.displayVotes}</span>
+                    <span className="candidate-percent-text">{item.percent}</span>
+
+                    <div className="candidate-progress-bar">
+                      <div
+                        className="candidate-progress-fill"
+                        style={{ width: `${item.progress}%` }}
+                      />
+                    </div>
+
+                    <div className="candidate-card-bottom">
+                      <span className="candidate-status-badge">{item.status}</span>
+                      <div className="candidate-actions-wrapper" style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button 
+                          onClick={() => handleEditClick(item)} 
+                          className="candidate-edit-btn" 
+                          aria-label="Edit candidate"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClick(item._id)} 
+                          className="candidate-edit-btn" 
+                          style={{ color: '#EF4444' }} 
+                          aria-label="Delete candidate"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-
-                  <h3 className="candidate-name-text">{item.name}</h3>
-                  <p className="candidate-dept-text">{item.department}</p>
-
-                  <span className="candidate-votes-value">{item.votes}</span>
-                  <span className="candidate-percent-text">{item.percent}</span>
-
-                  <div className="candidate-progress-bar">
-                    <div
-                      className="candidate-progress-fill"
-                      style={{ width: `${item.progress}%` }}
-                    />
-                  </div>
-
-                  <div className="candidate-card-bottom">
-                    <span className="candidate-status-badge">{item.status}</span>
-                    <button className="candidate-edit-btn" aria-label="Edit candidate">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 2 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="candidates-footer-count">
-              Showing 1 to {filteredCandidates.length} of 8 results
+              Showing {filteredCandidates.length} of {candidates.length} results
             </div>
           </>
         ) : (
@@ -277,22 +323,33 @@ const CandidatesPage = () => {
 
                 <div className="form-field-group">
                   <label className="form-label">Party Symbol</label>
-                  <button
-                    type="button"
-                    onClick={() => symbolInputRef.current && symbolInputRef.current.click()}
-                    className="symbol-upload-btn"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    Click to upload symbol
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => symbolInputRef.current && symbolInputRef.current.click()}
+                      className="symbol-upload-btn"
+                      style={{ flex: 1 }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      {formData.partySymbol ? 'Symbol uploaded' : 'Upload symbol'}
+                    </button>
+                    {formData.partySymbol && (
+                      <img 
+                        src={formData.partySymbol} 
+                        alt="Symbol preview" 
+                        style={{ width: '40px', height: '40px', objectFit: 'contain', border: '1px solid #E2E8F0', borderRadius: '8px' }} 
+                      />
+                    )}
+                  </div>
                   <input
                     ref={symbolInputRef}
                     type="file"
                     accept="image/*"
+                    onChange={handleSymbolUpload}
                     style={{ display: 'none' }}
                   />
                 </div>
@@ -336,7 +393,7 @@ const CandidatesPage = () => {
                 Cancel
               </button>
               <button type="submit" className="form-save-btn">
-                Save Candidate
+                {view === 'edit' ? 'Update Candidate' : 'Save Candidate'}
               </button>
             </div>
           </form>

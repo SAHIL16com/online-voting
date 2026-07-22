@@ -1,32 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import './VoterProfilePage.css';
 
 const VoterProfilePage = () => {
-  const { user, updateUserProfile } = useAuth();
+  const photoInputRef = useRef(null);
+  const { currentUser, user, updateProfile, uploadAvatar } = useAuth();
+  
   const [profile, setProfile] = useState({
-    fullName: user.name,
-    email: user.email,
-    phone: user.phone || '',
-    address: user.address || '',
-    voterId: user.voterId,
-    avatar: user.avatar
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    voterId: '',
+    avatar: ''
   });
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    updateUserProfile({
-      name: profile.fullName,
-      email: profile.email,
-      phone: profile.phone,
-      address: profile.address
+  const [loading, setLoading] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    setProfile({
+      fullName: currentUser?.fullName || user.name || '',
+      email: currentUser?.email || user.email || '',
+      phone: currentUser?.phone || user.phone || '',
+      address: currentUser?.address || user.address || '',
+      voterId: currentUser?.voterId || user.voterId || '',
+      avatar: currentUser?.avatar || user.avatar || '/candidate_aman.png'
     });
-    alert('Voter profile updated successfully!');
+  }, [currentUser, user]);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+      const base64Image = reader.result;
+      setUploadingPhoto(true);
+      setStatusMsg({ type: 'info', text: 'Uploading photo to Cloudinary...' });
+
+      try {
+        const updated = await uploadAvatar(base64Image);
+        setProfile((prev) => ({ ...prev, avatar: updated.avatar }));
+        setStatusMsg({ type: 'success', text: 'Photo uploaded to Cloudinary & saved to DB!' });
+      } catch (err) {
+        setStatusMsg({ type: 'error', text: err.message || 'Photo upload failed.' });
+      } finally {
+        setUploadingPhoto(false);
+      }
+    };
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatusMsg({ type: '', text: '' });
+
+    try {
+      await updateProfile({
+        fullName: profile.fullName,
+        email: profile.email,
+        phone: profile.phone,
+        address: profile.address,
+        voterId: profile.voterId
+      });
+      setStatusMsg({ type: 'success', text: 'Voter profile updated & saved to Database!' });
+    } catch (err) {
+      setStatusMsg({ type: 'error', text: err.message || 'Failed to update profile' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="voter-profile-container">
       <h1 className="voter-profile-title">Voter Profile</h1>
+
+      {statusMsg.text && (
+        <div style={{
+          backgroundColor: statusMsg.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+          borderColor: statusMsg.type === 'success' ? '#86EFAC' : '#FCA5A5',
+          color: statusMsg.type === 'success' ? '#166534' : '#991B1B',
+          border: '1px solid',
+          padding: '0.8rem 1rem',
+          borderRadius: '12px',
+          marginBottom: '1rem',
+          textAlign: 'center',
+          fontWeight: 600
+        }}>
+          {statusMsg.text}
+        </div>
+      )}
 
       <div className="voter-profile-main-card">
         <div className="voter-profile-left">
@@ -35,9 +101,26 @@ const VoterProfilePage = () => {
           </div>
 
           <h3 className="voter-name-head">{profile.fullName}</h3>
-          <span className="voter-id-sub">Voter ID: {profile.voterId}</span>
+          <span className="voter-id-sub">Voter ID: {profile.voterId || 'N/A'}</span>
 
           <span className="verified-pill-badge">✓ Verified Voter</span>
+
+          <button
+            type="button"
+            onClick={() => photoInputRef.current && photoInputRef.current.click()}
+            className="save-voter-profile-btn"
+            style={{ marginTop: '1rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+            disabled={uploadingPhoto}
+          >
+            {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+          </button>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            style={{ display: 'none' }}
+          />
         </div>
 
         <form onSubmit={handleSave} className="voter-profile-form">
@@ -83,8 +166,8 @@ const VoterProfilePage = () => {
             />
           </div>
 
-          <button type="submit" className="save-voter-profile-btn">
-            Save Profile Changes
+          <button type="submit" className="save-voter-profile-btn" disabled={loading}>
+            {loading ? 'Saving Changes...' : 'Save Profile Changes'}
           </button>
         </form>
       </div>

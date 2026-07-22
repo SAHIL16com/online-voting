@@ -1,8 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useVoters } from '../../../context/VotersContext';
+import { useAuth } from '../../../context/AuthContext';
 import './VotersPage.css';
 
 const VotersPage = () => {
-  const [view, setView] = useState('list');
+  const { voters, loading, fetchVoters, addVoter, updateVoter, deleteVoter } = useVoters();
+  const { token } = useAuth();
+
+  const [view, setView] = useState('list'); // 'list', 'add', 'edit'
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [verifyFilter, setVerifyFilter] = useState('All Verification');
@@ -19,93 +25,98 @@ const VotersPage = () => {
     voterId: '',
     password: '',
     showPassword: false,
-    photo: null
+    photo: ''
   });
 
-  const [voters, setVoters] = useState([
-    {
-      id: 1,
-      name: 'Priya Sharma',
-      voterId: 'VOT01212343',
-      email: 'priya@gmail.com',
-      status: 'Active',
-      verification: 'Verified',
-      avatar: '/candidate_priya.png'
-    },
-    {
-      id: 2,
-      name: 'Rohit Verma',
-      voterId: 'VOT01212344',
-      email: 'rohit@gmail.com',
-      status: 'Active',
-      verification: 'Verified',
-      avatar: '/candidate_rahul.png'
-    },
-    {
-      id: 3,
-      name: 'Neha Singh',
-      voterId: 'VOT01212345',
-      email: 'neha@gmail.com',
-      status: 'Active',
-      verification: 'Verified',
-      avatar: '/candidate_neha.png'
-    },
-    {
-      id: 4,
-      name: 'Aman Kumar',
-      voterId: 'VOT01212346',
-      email: 'aman@gmail.com',
-      status: 'Active',
-      verification: 'Verified',
-      avatar: '/candidate_aman.png'
-    },
-    {
-      id: 5,
-      name: 'John Doe',
-      voterId: 'VOT01212347',
-      email: 'john@gmail.com',
-      status: 'Suspended',
-      verification: 'Un-verified',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
-    },
-    {
-      id: 6,
-      name: 'Karan Mehta',
-      voterId: 'VOT01212348',
-      email: 'karan@gmail.com',
-      status: 'Pending',
-      verification: 'Un-verified',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
+  useEffect(() => {
+    const currentToken = token || localStorage.getItem('voting_token');
+    if (currentToken) {
+      fetchVoters(currentToken);
     }
-  ]);
+  }, [token]);
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, photo: url }));
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setFormData((prev) => ({ ...prev, photo: reader.result }));
+      };
     }
   };
 
-  const handleSaveVoter = (e) => {
+  const handleEditClick = (voter) => {
+    setEditingId(voter._id);
+    setFormData({
+      fullName: voter.name,
+      email: voter.email,
+      phone: voter.phone || '',
+      dob: voter.dob || '',
+      gender: voter.gender || 'Select gender',
+      address: voter.address || '',
+      voterId: voter.voterId || '',
+      password: '', // Kept empty unless changing password
+      showPassword: false,
+      photo: voter.avatar || ''
+    });
+    setView('edit');
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm('Are you sure you want to delete this voter?')) {
+      try {
+        const currentToken = token || localStorage.getItem('voting_token');
+        await deleteVoter(id, currentToken);
+        alert('Voter account removed successfully!');
+      } catch (err) {
+        alert(err.message || 'Failed to delete voter.');
+      }
+    }
+  };
+
+  const handleSaveVoter = async (e) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.email) {
-      alert('Please fill in full name and email.');
+    if (!formData.fullName || !formData.email || !formData.voterId) {
+      alert('Please fill in full name, email and Voter ID.');
       return;
     }
 
-    const created = {
-      id: Date.now(),
-      name: formData.fullName,
-      voterId: formData.voterId || `VOT${Math.floor(10000000 + Math.random() * 90000000)}`,
-      email: formData.email,
-      status: 'Active',
-      verification: 'Verified',
-      avatar: formData.photo || '/candidate_priya.png'
-    };
+    if (view === 'add' && !formData.password) {
+      alert('Please specify a password for the new voter account.');
+      return;
+    }
 
-    setVoters([created, ...voters]);
-    setView('list');
+    try {
+      const currentToken = token || localStorage.getItem('voting_token');
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        voterId: formData.voterId,
+        phone: formData.phone,
+        dob: formData.dob,
+        gender: formData.gender,
+        address: formData.address,
+        password: formData.password || undefined
+      };
+
+      if (view === 'edit') {
+        await updateVoter(editingId, payload, currentToken);
+        alert('Voter profile updated successfully!');
+      } else {
+        await addVoter(payload, currentToken);
+        alert('Voter profile created successfully!');
+      }
+
+      setView('list');
+      resetForm();
+    } catch (err) {
+      alert(err.message || 'Failed to save voter.');
+    }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
     setFormData({
       fullName: '',
       email: '',
@@ -116,7 +127,7 @@ const VotersPage = () => {
       voterId: '',
       password: '',
       showPassword: false,
-      photo: null
+      photo: ''
     });
   };
 
@@ -135,7 +146,7 @@ const VotersPage = () => {
   return (
     <div className="voters-page-container">
       <h1 className="voters-title">
-        {view === 'list' ? '7. VOTER MANAGEMENT' : '10. ADD VOTER'}
+        {view === 'list' ? '7. VOTER MANAGEMENT' : view === 'edit' ? 'EDIT VOTER' : '10. ADD VOTER'}
       </h1>
 
       <div className="voters-main-card">
@@ -164,7 +175,6 @@ const VotersPage = () => {
                 >
                   <option>All Status</option>
                   <option>Active</option>
-                  <option>Suspended</option>
                   <option>Pending</option>
                 </select>
 
@@ -178,93 +188,79 @@ const VotersPage = () => {
                   <option>Un-verified</option>
                 </select>
 
-                <button onClick={() => setView('add')} className="add-voter-btn">
+                <button onClick={() => { resetForm(); setView('add'); }} className="add-voter-btn">
                   <span>+</span> Add Voter
                 </button>
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table className="voters-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Voter ID</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Verification</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredVoters.map((row) => (
-                    <tr key={row.id}>
-                      <td>
-                        <div className="voter-name-cell">
-                          <img src={row.avatar} alt={row.name} className="voter-avatar-img" />
-                          <span>{row.name}</span>
-                        </div>
-                      </td>
-                      <td className="voter-id-cell">{row.voterId}</td>
-                      <td className="voter-email-cell">{row.email}</td>
-                      <td>
-                        <span className={`status-badge status-${row.status.toLowerCase()}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`verify-badge verify-${row.verification.toLowerCase().replace('-', '')}`}>
-                          {row.verification}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          <button className="action-icon-btn" aria-label="Edit">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 2 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
-                          <button className="action-icon-btn" aria-label="Refresh">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="23 4 23 10 17 10"/>
-                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                            </svg>
-                          </button>
-                          <button className="action-icon-btn" aria-label="View">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                              <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                          </button>
-                          <button className="action-icon-btn delete-btn" aria-label="Delete">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
+            {loading && voters.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Loading voters...</div>
+            ) : filteredVoters.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1.5rem', border: '1px dashed #E2E8F0', borderRadius: '16px', color: '#64748B' }}>
+                No voters found. Click "Add Voter" to create a voter account.
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="voters-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Voter ID (Username)</th>
+                      <th>Email</th>
+                      <th>Status</th>
+                      <th>Verification</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredVoters.map((row) => (
+                      <tr key={row._id}>
+                        <td>
+                          <div className="voter-name-cell">
+                            <img src={row.avatar} alt={row.name} className="voter-avatar-img" />
+                            <span>{row.name}</span>
+                          </div>
+                        </td>
+                        <td className="voter-id-cell" style={{ fontWeight: 600 }}>{row.voterId}</td>
+                        <td className="voter-email-cell">{row.email}</td>
+                        <td>
+                          <span className={`status-badge status-${row.status.toLowerCase()}`}>
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`verify-badge verify-${row.verification.toLowerCase().replace('-', '')}`}>
+                            {row.verification}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="actions-cell">
+                            <button onClick={() => handleEditClick(row)} className="action-icon-btn" aria-label="Edit">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+                            <button onClick={() => handleDeleteClick(row._id)} className="action-icon-btn delete-btn" aria-label="Delete">
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <div className="table-pagination-footer">
               <span className="results-count-text">
-                Showing 1 to {filteredVoters.length} of 12540 results
+                Showing {filteredVoters.length} of {voters.length} results
               </span>
-
-              <div className="pagination-controls">
-                <button className="page-btn">&lt;</button>
-                <button className="page-btn active">1</button>
-                <button className="page-btn">2</button>
-                <button className="page-btn">3</button>
-                <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>...</span>
-                <button className="page-btn">2090</button>
-                <button className="page-btn">&gt;</button>
-              </div>
             </div>
           </>
         ) : (
@@ -318,12 +314,6 @@ const VotersPage = () => {
                     onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                     className="form-input"
                   />
-                  <svg className="form-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
                 </div>
               </div>
 
@@ -352,52 +342,23 @@ const VotersPage = () => {
               </div>
 
               <div className="form-field-group span-2">
-                <label className="form-label">Voter ID</label>
+                <label className="form-label">Voter ID (This will be the username for Voter login)</label>
                 <input
                   type="text"
-                  placeholder="Enter voter ID"
+                  required
+                  placeholder="Enter voter ID (e.g. VOT10001)"
                   value={formData.voterId}
                   onChange={(e) => setFormData({ ...formData, voterId: e.target.value })}
                   className="form-input"
                 />
               </div>
 
-              <div className="form-field-group">
-                <div
-                  className="voter-photo-dropzone"
-                  onClick={() => photoInputRef.current && photoInputRef.current.click()}
-                >
-                  {formData.photo ? (
-                    <img src={formData.photo} alt="Uploaded" className="preview-img" />
-                  ) : (
-                    <>
-                      <div className="upload-icon-box">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                          <circle cx="8.5" cy="8.5" r="1.5"/>
-                          <polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                      </div>
-                      <span className="upload-primary-text">Click to upload</span>
-                      <span className="upload-secondary-text">PNG, JPG (max. 2MB)</span>
-                    </>
-                  )}
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              </div>
-
               <div className="form-field-group span-2">
-                <label className="form-label">Confirm Password</label>
-                <div className="form-input-wrapper">
+                <label className="form-label">{view === 'edit' ? 'Change Password (Optional)' : 'Password'}</label>
+                <div className="form-input-wrapper" style={{ position: 'relative' }}>
                   <input
                     type={formData.showPassword ? 'text' : 'password'}
-                    placeholder="Confirm password"
+                    placeholder={view === 'edit' ? 'Leave blank to keep current password' : 'Enter password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="form-input"
@@ -405,6 +366,7 @@ const VotersPage = () => {
                   <button
                     type="button"
                     className="eye-toggle-btn"
+                    style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}
                     onClick={() => setFormData({ ...formData, showPassword: !formData.showPassword })}
                     aria-label="Toggle password visibility"
                   >
@@ -431,7 +393,7 @@ const VotersPage = () => {
                 Cancel
               </button>
               <button type="submit" className="form-save-btn">
-                Add Voter
+                {view === 'edit' ? 'Update Voter' : 'Add Voter'}
               </button>
             </div>
           </form>

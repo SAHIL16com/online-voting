@@ -1,0 +1,41 @@
+.activities-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.activities-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.activities-main-card {
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  padding: 2.2rem;
+  border: 1px solid #EEF2F6;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.activities-card-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0;
+}
+
+.activities-subtitle {
+  font-size: 0.88rem;
+  color: #64748B;
+  margin: 6px 0 0;
+  font-weight: 500;
+}
+
+.back-activity-btn:hover {
+  color: #0F172A !important;
+  transform: translateX(-2px);
+  transition: all 0.2s ease;
+}

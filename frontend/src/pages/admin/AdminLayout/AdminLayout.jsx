@@ -1,9 +1,17 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
+  const [searchQuery, setSearchQuery] = React.useState('');
   const navigate = useNavigate();
+  const { logout, currentUser, adminUser } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const menuItems = [
     {
@@ -132,7 +140,7 @@ const AdminLayout = () => {
           </nav>
         </div>
 
-        <button onClick={() => navigate('/login')} className="admin-nav-logout">
+        <button onClick={handleLogout} className="admin-nav-logout">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
@@ -144,36 +152,81 @@ const AdminLayout = () => {
 
       <div className="admin-main-wrapper">
         <header className="admin-topbar">
-          <div className="admin-search-wrapper">
+          <div className="admin-search-wrapper" style={{ position: 'relative' }}>
             <svg className="admin-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input 
               type="text" 
-              placeholder="Search anything..." 
+              placeholder="Search sidebar elements..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="admin-search-input"
             />
+            {searchQuery.trim() !== '' && (
+              <div 
+                className="search-results-dropdown" 
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  width: '260px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '12px',
+                  border: '1px solid #EEF2F6',
+                  boxShadow: '0 10px 25px rgba(15, 23, 42, 0.08)',
+                  marginTop: '0.5rem',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '0.5rem 0',
+                  overflow: 'hidden'
+                }}
+              >
+                {menuItems.filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                  <div style={{ padding: '0.7rem 1rem', color: '#64748B', fontSize: '0.85rem' }}>No results found</div>
+                ) : (
+                  menuItems.filter(item => item.label.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        navigate(item.path);
+                        setSearchQuery('');
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.8rem',
+                        padding: '0.7rem 1rem',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s ease',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: '#0F172A'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF4'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <span style={{ color: '#2E7D47', display: 'flex', alignItems: 'center' }}>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           <div className="admin-topbar-right">
-            <button className="admin-notification-btn" aria-label="Notifications">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <span className="notification-badge">3</span>
-            </button>
-
             <div onClick={() => navigate('/admin/profile')} className="admin-profile-menu">
               <img 
-                src="/candidate_rahul.png" 
-                alt="Admin User" 
+                src={currentUser?.avatar || adminUser.avatar} 
+                alt={currentUser?.fullName || adminUser.name} 
                 className="admin-avatar" 
               />
               <div className="admin-user-info">
-                <span className="admin-user-name">Admin User</span>
-                <span className="admin-user-role">Administrator</span>
+                <span className="admin-user-name">{currentUser?.fullName || adminUser.name}</span>
+                <span className="admin-user-role">{currentUser?.role === 'admin' ? 'Administrator' : (currentUser?.role || adminUser.role)}</span>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
                 <path d="m6 9 6 6 6-6"/>

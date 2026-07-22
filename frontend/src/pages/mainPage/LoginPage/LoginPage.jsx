@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import './LoginPage.css';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('voter'); // 'voter' or 'admin'
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/admin/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const user = await login(email, password, role);
+      if (user?.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/voter/dashboard');
+      }
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,18 +47,38 @@ const LoginPage = () => {
         </div>
 
         <h1 className="auth-main-heading">Welcome Back!</h1>
-        <p className="auth-sub-heading">Login to your admin account</p>
+        <p className="auth-sub-heading">Login to access your account</p>
+
+        {/* Role Toggle Tabs */}
+        <div className="auth-role-tabs">
+          <button
+            type="button"
+            className={`auth-role-tab ${role === 'voter' ? 'active' : ''}`}
+            onClick={() => setRole('voter')}
+          >
+            Voter Login
+          </button>
+          <button
+            type="button"
+            className={`auth-role-tab ${role === 'admin' ? 'active' : ''}`}
+            onClick={() => setRole('admin')}
+          >
+            Admin Login
+          </button>
+        </div>
+
+        {error && <div className="auth-error-alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field-group">
-            <label className="auth-label">Email Address</label>
+            <label className="auth-label">{role === 'voter' ? 'Voter ID (Username)' : 'Email Address'}</label>
             <div className="auth-input-wrapper">
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={role === 'voter' ? 'Enter your Voter ID' : 'Enter your email'}
                 className="auth-input"
               />
             </div>
@@ -90,15 +130,22 @@ const LoginPage = () => {
             <label htmlFor="rememberMe">Remember me</label>
           </div>
 
-          <button type="submit" className="auth-submit-btn">
-            Login
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? 'Logging in...' : `Login as ${role === 'admin' ? 'Admin' : 'Voter'}`}
           </button>
         </form>
 
-        <p className="auth-footer-text">
-          Don't have an account? 
-          <Link to="/register" className="auth-footer-link">Register</Link>
-        </p>
+        {role === 'admin' && (
+          <p className="auth-footer-text">
+            Don't have an account? 
+            <Link to="/register" className="auth-footer-link">Register</Link>
+          </p>
+        )}
+        {role === 'voter' && (
+          <p className="auth-footer-text" style={{ color: '#64748B' }}>
+            Voter registration is managed by Admin. Please contact admin for your login credentials.
+          </p>
+        )}
 
         <div className="auth-illustration-container">
           <svg className="auth-lock-illustration" viewBox="0 0 220 180" fill="none" xmlns="http://www.w3.org/2000/svg">

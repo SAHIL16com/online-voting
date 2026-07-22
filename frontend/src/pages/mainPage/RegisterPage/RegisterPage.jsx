@@ -1,27 +1,61 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import './RegisterPage.css';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('admin'); // Only admin role allowed publicly
+  const [voterId, setVoterId] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleSubmit = (e) => {
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (password !== confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
       return;
     }
     if (!agreeTerms) {
-      alert('Please agree to the Terms & Conditions.');
+      setError('Please agree to the Terms & Conditions.');
       return;
     }
-    alert('Account created successfully!');
+
+    setLoading(true);
+
+    try {
+      const user = await register({
+        fullName,
+        email,
+        password,
+        role,
+        voterId: role === 'voter' ? voterId : undefined,
+        phone,
+      });
+
+      if (user?.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/voter/dashboard');
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,7 +71,11 @@ const RegisterPage = () => {
         </div>
 
         <h1 className="auth-main-heading">Create New Account</h1>
-        <p className="auth-sub-heading">Fill in the details to get started</p>
+        <p className="auth-sub-heading">Fill in details to register in the system</p>
+
+        {/* Voter registration is disabled publicly; only Admins can create voter accounts */}
+
+        {error && <div className="auth-error-alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-field-group">
@@ -62,7 +100,35 @@ const RegisterPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email"
+                placeholder="Enter email address"
+                className="auth-input"
+              />
+            </div>
+          </div>
+
+          {role === 'voter' && (
+            <div className="auth-field-group">
+              <label className="auth-label">Voter ID (Optional)</label>
+              <div className="auth-input-wrapper">
+                <input
+                  type="text"
+                  value={voterId}
+                  onChange={(e) => setVoterId(e.target.value)}
+                  placeholder="e.g. VOT12345678"
+                  className="auth-input"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="auth-field-group">
+            <label className="auth-label">Phone Number (Optional)</label>
+            <div className="auth-input-wrapper">
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 9876543210"
                 className="auth-input"
               />
             </div>
@@ -76,7 +142,7 @@ const RegisterPage = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="Enter password (min 6 chars)"
                 className="auth-input"
               />
               <button
@@ -150,8 +216,8 @@ const RegisterPage = () => {
             </label>
           </div>
 
-          <button type="submit" className="auth-submit-btn">
-            Create Account
+          <button type="submit" className="auth-submit-btn" disabled={loading}>
+            {loading ? 'Creating Account...' : `Register ${role === 'admin' ? 'Admin' : 'Voter'} Account`}
           </button>
         </form>
 

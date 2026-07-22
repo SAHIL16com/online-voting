@@ -462,3 +462,97 @@
 .form-submit-green-btn:hover {
   background-color: #236337;
 }
+
+/* Shortlist Candidate styles */
+.shortlist-candidates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.shortlist-candidate-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  cursor: pointer;
+  background-color: #FFFFFF;
+  transition: all 0.2s ease;
+}
+
+.shortlist-candidate-label:hover {
+  border-color: #CBD5E1;
+  background-color: #F8FAFC;
+}
+
+/* Status toggle button inside actions cell */
+.status-toggle-btn {
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.status-toggle-btn.start-btn {
+  background-color: #E8F5E9;
+  color: #2E7D47;
+}
+
+.status-toggle-btn.start-btn:hover {
+  background-color: #2E7D47;
+  color: #FFFFFF;
+}
+
+.status-toggle-btn.stop-btn {
+  background-color: #FFEBEE;
+  color: #C62828;
+}
+
+.status-toggle-btn.stop-btn:hover {
+  background-color: #C62828;
+  color: #FFFFFF;
+}
+
+/* Controls and buttons mobile styling */
+@media (max-width: 640px) {
+  .elections-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .elections-search-box {
+    width: 100%;
+  }
+  .elections-controls-right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .elections-filter-select, .create-election-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .form-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .form-cancel-btn, .form-submit-green-btn {
+    width: 100%;
+    text-align: center;
+  }
+  .actions-cell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+  .status-toggle-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -1,8 +1,16 @@
 import React, { useState, useRef } from 'react';
+import { useElections } from '../../../context/ElectionsContext';
+import { useCandidates } from '../../../context/CandidatesContext';
+import { useAuth } from '../../../context/AuthContext';
 import './ElectionsPage.css';
 
 const ElectionsPage = () => {
-  const [view, setView] = useState('list');
+  const { elections, loading, addElection, updateElection, toggleElectionStatus, deleteElection } = useElections();
+  const { candidates } = useCandidates();
+  const { token } = useAuth();
+
+  const [view, setView] = useState('list'); // 'list', 'create', 'edit'
+  const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
 
@@ -10,101 +18,112 @@ const ElectionsPage = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    type: 'Select type',
+    type: 'Student',
     description: '',
     startDate: '',
     startTime: '',
-    eligibility: 'Select eligibility',
-    timeDuration: '0D:11',
-    banner: null
+    endDate: '',
+    candidates: [], // Selected candidate IDs
+    banner: ''
   });
-
-  const [elections, setElections] = useState([
-    {
-      id: 1,
-      name: 'College President Election 2024',
-      type: 'Student',
-      startDate: '01 May 2024',
-      endDate: '31 May 2024',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Student Council Election 2024',
-      type: 'Student',
-      startDate: '10 May 2024',
-      endDate: '25 May 2024',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Sports Head Election 2024',
-      type: 'Student',
-      startDate: '15 May 2024',
-      endDate: '30 May 2024',
-      status: 'Active'
-    },
-    {
-      id: 4,
-      name: 'Cultural Head Election 2024',
-      type: 'Student',
-      startDate: '20 May 2024',
-      endDate: '05 Jun 2024',
-      status: 'Upcoming'
-    },
-    {
-      id: 5,
-      name: 'Department Head Election',
-      type: 'Staff',
-      startDate: '01 Apr 2024',
-      endDate: '20 Apr 2024',
-      status: 'Completed'
-    },
-    {
-      id: 6,
-      name: 'Class Representative Election',
-      type: 'Student',
-      startDate: '10 Mar 2024',
-      endDate: '20 Mar 2024',
-      status: 'Completed'
-    }
-  ]);
 
   const handleBannerUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, banner: imageUrl }));
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        setFormData((prev) => ({ ...prev, banner: reader.result }));
+      };
     }
   };
 
-  const handleCreateSubmit = (e) => {
+  const handleCandidateCheckbox = (candId) => {
+    setFormData((prev) => {
+      const selected = prev.candidates.includes(candId)
+        ? prev.candidates.filter((id) => id !== candId)
+        : [...prev.candidates, candId];
+      return { ...prev, candidates: selected };
+    });
+  };
+
+  const handleEditClick = (election) => {
+    setEditingId(election._id);
+    setFormData({
+      name: election.name,
+      type: election.type || 'Student',
+      description: election.description || '',
+      startDate: election.startDate || '',
+      startTime: election.startTime || '',
+      endDate: election.endDate || '',
+      candidates: election.candidates ? election.candidates.map(c => c._id || c) : [],
+      banner: election.banner || ''
+    });
+    setView('edit');
+  };
+
+  const handleDeleteClick = async (id) => {
+    if (window.confirm('Are you sure you want to delete this election?')) {
+      try {
+        const currentToken = token || localStorage.getItem('voting_token');
+        await deleteElection(id, currentToken);
+        alert('Election deleted successfully!');
+      } catch (err) {
+        alert(err.message || 'Failed to delete election.');
+      }
+    }
+  };
+
+  const handleToggleStatusClick = async (id) => {
+    try {
+      const currentToken = token || localStorage.getItem('voting_token');
+      const updated = await toggleElectionStatus(id, currentToken);
+      alert(`Election status toggled successfully! Now: ${updated.status}`);
+    } catch (err) {
+      alert(err.message || 'Failed to toggle election status.');
+    }
+  };
+
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name) {
       alert('Please enter election name.');
       return;
     }
 
-    const newElection = {
-      id: Date.now(),
-      name: formData.name,
-      type: formData.type !== 'Select type' ? formData.type : 'Student',
-      startDate: formData.startDate || '21 Jul 2026',
-      endDate: '30 Aug 2026',
-      status: 'Upcoming'
-    };
+    try {
+      const currentToken = token || localStorage.getItem('voting_token');
+      const payload = {
+        ...formData,
+        endDate: formData.endDate || 'TBD'
+      };
 
-    setElections([newElection, ...elections]);
-    setView('list');
+      if (view === 'edit') {
+        await updateElection(editingId, payload, currentToken);
+        alert('Election updated successfully!');
+      } else {
+        await addElection(payload, currentToken);
+        alert('Election created successfully!');
+      }
+
+      setView('list');
+      resetForm();
+    } catch (err) {
+      alert(err.message || 'Failed to save election.');
+    }
+  };
+
+  const resetForm = () => {
+    setEditingId(null);
     setFormData({
       name: '',
-      type: 'Select type',
+      type: 'Student',
       description: '',
       startDate: '',
       startTime: '',
-      eligibility: 'Select eligibility',
-      timeDuration: '0D:11',
-      banner: null
+      endDate: '',
+      candidates: [],
+      banner: ''
     });
   };
 
@@ -114,10 +133,16 @@ const ElectionsPage = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Summary counts
+  const activeCount = elections.filter(e => e.status === 'Active').length;
+  const upcomingCount = elections.filter(e => e.status === 'Upcoming').length;
+  const completedCount = elections.filter(e => e.status === 'Completed').length;
+  const cancelledCount = elections.filter(e => e.status === 'Cancelled').length;
+
   return (
     <div className="elections-page-container">
       <h1 className="elections-title">
-        {view === 'list' ? '2. MANAGE ELECTIONS' : '3. CREATE ELECTION'}
+        {view === 'list' ? '2. MANAGE ELECTIONS' : view === 'edit' ? 'EDIT ELECTION' : '3. CREATE ELECTION'}
       </h1>
 
       <div className="elections-main-card">
@@ -151,76 +176,84 @@ const ElectionsPage = () => {
                   <option>Cancelled</option>
                 </select>
 
-                <button onClick={() => setView('create')} className="create-election-btn">
+                <button onClick={() => { resetForm(); setView('create'); }} className="create-election-btn">
                   <span>+</span> Create Election
                 </button>
               </div>
             </div>
 
-            <div className="table-responsive">
-              <table className="elections-table">
-                <thead>
-                  <tr>
-                    <th>Election Name</th>
-                    <th>Type</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredElections.map((row) => (
-                    <tr key={row.id}>
-                      <td className="election-name-cell">{row.name}</td>
-                      <td className="election-type-cell">{row.type}</td>
-                      <td>{row.startDate}</td>
-                      <td>{row.endDate}</td>
-                      <td>
-                        <span className={`status-badge status-${row.status.toLowerCase()}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          <button className="action-icon-btn" aria-label="Edit">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                          </button>
-                          <button className="action-icon-btn" aria-label="View">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                              <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                          </button>
-                          <button className="action-icon-btn delete-btn" aria-label="Delete">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
+            {loading && elections.length === 0 ? (
+              <div className="elections-loading" style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Loading elections...</div>
+            ) : filteredElections.length === 0 ? (
+              <div className="elections-empty-state" style={{ textAlign: 'center', padding: '3rem 1.5rem', border: '1px dashed #E2E8F0', borderRadius: '16px', color: '#64748B' }}>
+                No elections found. Click "Create Election" to create one.
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="elections-table">
+                  <thead>
+                    <tr>
+                      <th>Election Name</th>
+                      <th>Type</th>
+                      <th>Start Date</th>
+                      <th>Shortlisted Candidates</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredElections.map((row) => (
+                      <tr key={row._id}>
+                        <td className="election-name-cell">{row.name}</td>
+                        <td className="election-type-cell">{row.type}</td>
+                        <td>{row.startDate || 'TBD'}</td>
+                        <td>
+                          <div style={{ fontSize: '0.82rem', color: '#475569', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {row.candidates && row.candidates.length > 0
+                              ? row.candidates.map(c => c.name || c).join(', ')
+                              : 'None Shortlisted'}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge status-${row.status.toLowerCase()}`}>
+                            {row.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="actions-cell" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <button
+                              onClick={() => handleToggleStatusClick(row._id)}
+                              className={`status-toggle-btn ${row.status === 'Active' ? 'stop-btn' : 'start-btn'}`}
+                            >
+                              {row.status === 'Active' ? 'Stop Election' : 'Start Election'}
+                            </button>
+
+                            <button onClick={() => handleEditClick(row)} className="action-icon-btn" aria-label="Edit">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                            </button>
+
+                            <button onClick={() => handleDeleteClick(row._id)} className="action-icon-btn delete-btn" aria-label="Delete">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             <div className="table-pagination-footer">
               <span className="results-count-text">
-                Showing 1 to {filteredElections.length} of 18 results
+                Showing {filteredElections.length} of {elections.length} results
               </span>
-
-              <div className="pagination-controls">
-                <button className="page-btn">&lt;</button>
-                <button className="page-btn active">1</button>
-                <button className="page-btn">2</button>
-                <button className="page-btn">3</button>
-                <button className="page-btn">&gt;</button>
-              </div>
             </div>
           </>
         ) : (
@@ -251,7 +284,6 @@ const ElectionsPage = () => {
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="form-select"
                 >
-                  <option>Select type</option>
                   <option>Student</option>
                   <option>Staff</option>
                   <option>General</option>
@@ -302,35 +334,54 @@ const ElectionsPage = () => {
                 </div>
               </div>
 
-              <div className="form-field-group">
-                <label className="form-label">Eligibility</label>
-                <select
-                  value={formData.eligibility}
-                  onChange={(e) => setFormData({ ...formData, eligibility: e.target.value })}
-                  className="form-select"
-                >
-                  <option>Select eligibility</option>
-                  <option>All Students</option>
-                  <option>Final Year Only</option>
-                  <option>Staff Only</option>
-                </select>
+              {/* Shortlist candidates checkbox area */}
+              <div className="form-field-group full-width" style={{ marginTop: '1rem' }}>
+                <label className="form-label">Shortlist Candidates (Select to participate in this election)</label>
+                {candidates.length === 0 ? (
+                  <div style={{ color: '#64748B', fontSize: '0.88rem', padding: '0.5rem 0' }}>
+                    No candidates available. Please create candidates first in Candidate Management tab.
+                  </div>
+                ) : (
+                  <div className="shortlist-candidates-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.8rem', marginTop: '0.5rem' }}>
+                    {candidates.map((cand) => (
+                      <label
+                        key={cand._id}
+                        className="shortlist-candidate-label"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          padding: '0.6rem 0.8rem',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          cursor: 'pointer',
+                          backgroundColor: formData.candidates.includes(cand._id) ? '#F0FDF4' : '#FFFFFF',
+                          borderColor: formData.candidates.includes(cand._id) ? '#2E7D47' : '#E2E8F0',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.candidates.includes(cand._id)}
+                          onChange={() => handleCandidateCheckbox(cand._id)}
+                          style={{ accentColor: '#2E7D47' }}
+                        />
+                        <img 
+                          src={cand.photo} 
+                          alt={cand.name} 
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+                        />
+                        <div style={{ fontSize: '0.85rem' }}>
+                          <div style={{ fontWeight: 600, color: '#0F172A' }}>{cand.name}</div>
+                          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{cand.department}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="form-field-group">
-                <label className="form-label">Time</label>
-                <select
-                  value={formData.timeDuration}
-                  onChange={(e) => setFormData({ ...formData, timeDuration: e.target.value })}
-                  className="form-select"
-                >
-                  <option>0D:11</option>
-                  <option>1 Day</option>
-                  <option>3 Days</option>
-                  <option>7 Days</option>
-                </select>
-              </div>
-
-              <div className="form-field-group full-width">
+              <div className="form-field-group full-width" style={{ marginTop: '1rem' }}>
                 <label className="form-label">Banner Image</label>
                 <div
                   className="banner-upload-dropzone"
@@ -360,7 +411,7 @@ const ElectionsPage = () => {
                 Cancel
               </button>
               <button type="submit" className="form-submit-green-btn">
-                Create Election
+                {view === 'edit' ? 'Update Election' : 'Create Election'}
               </button>
             </div>
           </form>
@@ -371,19 +422,19 @@ const ElectionsPage = () => {
         <div className="elections-summary-grid">
           <div className="summary-card">
             <span className="summary-card-title">Active Elections</span>
-            <span className="summary-card-count">3</span>
+            <span className="summary-card-count">{activeCount}</span>
           </div>
           <div className="summary-card">
             <span className="summary-card-title">Upcoming Elections</span>
-            <span className="summary-card-count">1</span>
+            <span className="summary-card-count">{upcomingCount}</span>
           </div>
           <div className="summary-card">
             <span className="summary-card-title">Completed Elections</span>
-            <span className="summary-card-count">14</span>
+            <span className="summary-card-count">{completedCount}</span>
           </div>
           <div className="summary-card">
             <span className="summary-card-title">Cancelled Elections</span>
-            <span className="summary-card-count">0</span>
+            <span className="summary-card-count">{cancelledCount}</span>
           </div>
         </div>
       )}

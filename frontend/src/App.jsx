@@ -14,6 +14,7 @@ import ResultsPage from './pages/admin/Results/ResultsPage';
 import ReportsPage from './pages/admin/Reports/ReportsPage';
 import ProfilePage from './pages/admin/Profile/ProfilePage';
 import SettingsPage from './pages/admin/Settings/SettingsPage';
+import ActivitiesPage from './pages/admin/Activities/ActivitiesPage';
 import VoterLayout from './pages/voter/VoterLayout/VoterLayout';
 import VoterDashboard from './pages/voter/VoterDashboard/VoterDashboard';
 import ActiveElectionsPage from './pages/voter/ActiveElections/ActiveElectionsPage';
@@ -63,6 +64,7 @@ const App = () => {
                   <Route path="reports" element={<ReportsPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="profile" element={<ProfilePage />} />
+                  <Route path="activities" element={<ActivitiesPage />} />
                 </Route>
 
                 <Route path="/voter" element={<VoterLayout />}>
