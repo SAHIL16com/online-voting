@@ -64,39 +64,8 @@ const Navbar = () => {
           <Link to="/register" className="btn btn-primary btn-pill navbar-btn-register">
             Get Started
           </Link>
-
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="mobile-toggle-btn"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              {mobileMenuOpen ? (
-                <path d="M18 6L6 18M6 6l12 12" />
-              ) : (
-                <path d="M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
         </div>
       </div>
-
-      {mobileMenuOpen && (
-        <div className="mobile-drawer">
-          {navItems.map((item) => (
-            <a
-              key={item.id}
-              href={item.href}
-              onClick={() => {
-                setActiveTab(item.id);
-                setMobileMenuOpen(false);
-              }}
-              className={`mobile-nav-link ${activeTab === item.id ? 'active' : ''}`}
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
-      )}
     </header>
   );
 };

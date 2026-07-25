@@ -209,3 +209,10 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   min-height: 100vh;
 }
+
+/* Force minimum 16px font-size for input elements on mobile to prevent iOS zooming on focus */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
