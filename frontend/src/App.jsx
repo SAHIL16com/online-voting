@@ -24,7 +24,7 @@ import ElectionHistoryPage from './pages/voter/ElectionHistory/ElectionHistoryPa
 import VoterNotificationsPage from './pages/voter/Notifications/VoterNotificationsPage';
 import VoterProfilePage from './pages/voter/Profile/VoterProfilePage';
 
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ElectionsProvider } from './context/ElectionsContext';
 import { CandidatesProvider } from './context/CandidatesContext';
 import { VotersProvider } from './context/VotersContext';
@@ -40,6 +40,36 @@ const PublicLayout = () => (
   </div>
 );
 
+// Route Guard Component to secure admin/voter boundaries
+const ProtectedRoute = ({ allowedRoles }) => {
+  const { currentUser, loading } = useAuth();
+  const token = localStorage.getItem('voting_token');
+  const userStr = localStorage.getItem('voting_user');
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', color: '#64748B' }}>
+        Loading session...
+      </div>
+    );
+  }
+
+  const activeUser = currentUser || (userStr ? JSON.parse(userStr) : null);
+
+  if (!activeUser || !token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(activeUser.role)) {
+    if (activeUser.role === 'voter') {
+      return <Navigate to="/voter/dashboard" replace />;
+    }
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
+
 const App = () => {
   return (
     <AuthProvider>
@@ -48,35 +78,45 @@ const App = () => {
           <VotersProvider>
             <Router>
               <Routes>
+                {/* Public Routes */}
                 <Route element={<PublicLayout />}>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/register" element={<RegisterPage />} />
                 </Route>
 
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="elections" element={<ElectionsPage />} />
-                  <Route path="candidates" element={<CandidatesPage />} />
-                  <Route path="voters" element={<VotersPage />} />
-                  <Route path="results" element={<ResultsPage />} />
-                  <Route path="reports" element={<ReportsPage />} />
-                  <Route path="settings" element={<SettingsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
-                  <Route path="activities" element={<ActivitiesPage />} />
+                {/* Secure Admin Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="elections" element={<ElectionsPage />} />
+                    <Route path="candidates" element={<CandidatesPage />} />
+                    <Route path="voters" element={<VotersPage />} />
+                    <Route path="results" element={<ResultsPage />} />
+                    <Route path="reports" element={<ReportsPage />} />
+                    <Route path="settings" element={<SettingsPage />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="activities" element={<ActivitiesPage />} />
+                  </Route>
                 </Route>
 
-                <Route path="/voter" element={<VoterLayout />}>
-                  <Route index element={<Navigate to="/voter/dashboard" replace />} />
-                  <Route path="dashboard" element={<VoterDashboard />} />
-                  <Route path="active-elections" element={<ActiveElectionsPage />} />
-                  <Route path="vote" element={<VotePage />} />
-                  <Route path="status" element={<VotingStatusPage />} />
-                  <Route path="history" element={<ElectionHistoryPage />} />
-                  <Route path="notifications" element={<VoterNotificationsPage />} />
-                  <Route path="profile" element={<VoterProfilePage />} />
+                {/* Secure Voter Routes */}
+                <Route element={<ProtectedRoute allowedRoles={['voter']} />}>
+                  <Route path="/voter" element={<VoterLayout />}>
+                    <Route index element={<Navigate to="/voter/dashboard" replace />} />
+                    <Route path="dashboard" element={<VoterDashboard />} />
+                    <Route path="active-elections" element={<ActiveElectionsPage />} />
+                    <Route path="vote" element={<VotePage />} />
+                    <Route path="status" element={<VotingStatusPage />} />
+                    <Route path="history" element={<ElectionHistoryPage />} />
+                    <Route path="notifications" element={<VoterNotificationsPage />} />
+                    <Route path="profile" element={<VoterProfilePage />} />
+                  </Route>
                 </Route>
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Router>
           </VotersProvider>

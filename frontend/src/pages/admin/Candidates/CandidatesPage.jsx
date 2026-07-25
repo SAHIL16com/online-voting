@@ -1,11 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useCandidates } from '../../../context/CandidatesContext';
 import { useAuth } from '../../../context/AuthContext';
 import './CandidatesPage.css';
 
 const CandidatesPage = () => {
-  const { candidates, loading, addCandidate, updateCandidate, deleteCandidate } = useCandidates();
+  const { candidates, loading, addCandidate, updateCandidate, deleteCandidate, fetchCandidates } = useCandidates();
   const { token } = useAuth();
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
 
   const [view, setView] = useState('list'); // 'list', 'add', 'edit'
   const [editingId, setEditingId] = useState(null);
@@ -157,6 +161,38 @@ const CandidatesPage = () => {
               </div>
 
               <div className="candidates-controls-right">
+                <button
+                  type="button"
+                  onClick={fetchCandidates}
+                  className="refresh-candidates-btn"
+                  title="Refresh Candidates"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0.65rem',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '12px',
+                    backgroundColor: '#FFFFFF',
+                    cursor: 'pointer',
+                    color: '#64748B',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#CBD5E1';
+                    e.currentTarget.style.color = '#0F172A';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.color = '#64748B';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 4v6h-6" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                </button>
+
                 <select
                   value={electionFilter}
                   onChange={(e) => setElectionFilter(e.target.value)}
@@ -188,16 +224,6 @@ const CandidatesPage = () => {
 
                     <h3 className="candidate-name-text">{item.name}</h3>
                     <p className="candidate-dept-text">{item.department}</p>
-
-                    <span className="candidate-votes-value">{item.displayVotes}</span>
-                    <span className="candidate-percent-text">{item.percent}</span>
-
-                    <div className="candidate-progress-bar">
-                      <div
-                        className="candidate-progress-fill"
-                        style={{ width: `${item.progress}%` }}
-                      />
-                    </div>
 
                     <div className="candidate-card-bottom">
                       <span className="candidate-status-badge">{item.status}</span>

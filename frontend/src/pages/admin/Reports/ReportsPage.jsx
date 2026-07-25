@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useElections } from '../../../context/ElectionsContext';
+import { useAuth } from '../../../context/AuthContext';
 import './ReportsPage.css';
 
 const ReportsPage = () => {
-  const { elections, loading } = useElections();
+  const { elections, loading, togglePublishResult } = useElections();
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('All Types');
   const [previewElection, setPreviewElection] = useState(null); // Selected election for modal preview
@@ -21,6 +23,19 @@ const ReportsPage = () => {
   };
 
   const totalPreviewVotes = getPreviewTotalVotes();
+
+  const handlePublishToggle = async (election) => {
+    try {
+      const currentToken = token || localStorage.getItem('voting_token');
+      const updated = await togglePublishResult(election._id || election.id, currentToken);
+      if (previewElection && (previewElection._id === election._id || previewElection.id === election.id)) {
+        setPreviewElection(updated);
+      }
+      alert(`Election results ${!election.isPublished ? 'published' : 'un-published'} successfully!`);
+    } catch (err) {
+      alert(err.message || 'Failed to toggle publish status.');
+    }
+  };
 
   return (
     <div className="reports-page-container">
@@ -71,7 +86,7 @@ const ReportsPage = () => {
                   <th style={{ padding: '1rem', color: '#64748B', fontWeight: 700 }}>Type</th>
                   <th style={{ padding: '1rem', color: '#64748B', fontWeight: 700 }}>Start Date</th>
                   <th style={{ padding: '1rem', color: '#64748B', fontWeight: 700 }}>Status</th>
-                  <th style={{ padding: '1rem', color: '#64748B', fontWeight: 700, textAlign: 'right' }}>Preview Result</th>
+                  <th style={{ padding: '1rem', color: '#64748B', fontWeight: 700, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -85,7 +100,7 @@ const ReportsPage = () => {
                         {item.status || 'Upcoming'}
                       </span>
                     </td>
-                    <td style={{ padding: '1.1rem 1rem', textAlign: 'right' }}>
+                    <td style={{ padding: '1.1rem 1rem', textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                       <button
                         onClick={() => setPreviewElection(item)}
                         className="report-preview-btn"
@@ -108,6 +123,31 @@ const ReportsPage = () => {
                           <circle cx="12" cy="12" r="3"/>
                         </svg>
                         Preview
+                      </button>
+
+                      <button
+                        onClick={() => handlePublishToggle(item)}
+                        className="report-publish-btn"
+                        style={{
+                          backgroundColor: item.isPublished ? '#FFEBEE' : '#E3F2FD',
+                          color: item.isPublished ? '#C62828' : '#1565C0',
+                          border: 'none',
+                          padding: '0.45rem 1rem',
+                          borderRadius: '8px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                          <polyline points="16 6 12 2 8 6"/>
+                          <line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                        {item.isPublished ? 'Unpublish' : 'Publish'}
                       </button>
                     </td>
                   </tr>
@@ -233,6 +273,29 @@ const ReportsPage = () => {
                 style={{ padding: '0.65rem 1.4rem', border: '1px solid #E2E8F0', borderRadius: '10px', backgroundColor: '#FFFFFF', color: '#64748B', fontWeight: 700, cursor: 'pointer' }}
               >
                 Close Preview
+              </button>
+
+              <button
+                onClick={() => handlePublishToggle(previewElection)}
+                style={{
+                  padding: '0.65rem 1.4rem',
+                  border: 'none',
+                  borderRadius: '10px',
+                  backgroundColor: previewElection.isPublished ? '#EF4444' : '#2E7D47',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                  <polyline points="16 6 12 2 8 6"/>
+                  <line x1="12" y1="2" x2="12" y2="15"/>
+                </svg>
+                {previewElection.isPublished ? 'Unpublish' : 'Publish'}
               </button>
             </div>
           </div>

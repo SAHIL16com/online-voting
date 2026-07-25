@@ -1,11 +1,15 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useElections } from '../../../context/ElectionsContext';
 import './VoterLayout.css';
 
 const VoterLayout = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { elections } = useElections();
+
+  const hasActiveNotification = elections.some((e) => e.status === 'Active');
 
   const handleLogout = () => {
     logout();
@@ -74,7 +78,7 @@ const VoterLayout = () => {
       id: 'notifications',
       label: 'Notifications',
       path: '/voter/notifications',
-      badge: '2',
+      badge: hasActiveNotification,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -118,7 +122,7 @@ const VoterLayout = () => {
               >
                 {item.icon}
                 <span>{item.label}</span>
-                {item.badge && <span className="nav-badge-green">{item.badge}</span>}
+                {item.badge && <span className="nav-badge-dot" style={{ marginLeft: 'auto', backgroundColor: '#16A34A', width: '8px', height: '8px', borderRadius: '50%' }}></span>}
               </NavLink>
             ))}
           </nav>
@@ -154,7 +158,9 @@ const VoterLayout = () => {
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
               </svg>
-              <span className="notification-badge">2</span>
+              {hasActiveNotification && (
+                <span className="notification-badge-dot" style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', backgroundColor: '#EF4444', borderRadius: '50%', border: '1px solid #FFFFFF' }}></span>
+              )}
             </button>
 
             <div onClick={() => navigate('/voter/profile')} className="voter-profile-menu">

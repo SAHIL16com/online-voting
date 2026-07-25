@@ -23,6 +23,20 @@ export const CandidatesProvider = ({ children }) => {
 
   useEffect(() => {
     fetchCandidates();
+
+    // Poll candidates dynamically every 5 seconds to keep voter panel in sync with admin panel changes
+    const interval = setInterval(() => {
+      fetch('/api/candidates')
+        .then((res) => {
+          if (res.ok) return res.json();
+        })
+        .then((data) => {
+          if (data) setCandidates(data);
+        })
+        .catch((err) => console.error('Silent candidates fetch failed:', err));
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const addCandidate = async (candData, token) => {
@@ -111,6 +125,7 @@ export const CandidatesProvider = ({ children }) => {
         votes: v,
         displayVotes: `${v.toLocaleString()} Votes`,
         percent: `${pct}%`,
+        percentage: `${pct}%`,
         progress: parseFloat(pct),
         photo: c.photo || '/candidate_priya.png',
         status: c.status || 'Active',
