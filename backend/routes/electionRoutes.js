@@ -10,8 +10,8 @@ import { protect, authorize } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Public route to view elections
-router.get('/', getElections);
+// Protected route to view elections (scoped by user's adminId)
+router.get('/', protect, getElections);
 
 // Admin-only write routes
 router.post('/', protect, authorize('admin'), createElection);

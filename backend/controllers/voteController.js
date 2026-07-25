@@ -27,6 +27,11 @@ export const castVote = async (req, res) => {
       return res.status(400).json({ message: 'Voting is not active for this election' });
     }
 
+    // Verify ecosystem boundary: voter's adminId must match election's adminId
+    if (election.adminId && req.user.adminId && election.adminId.toString() !== req.user.adminId.toString()) {
+      return res.status(403).json({ message: 'You are not authorized to vote in this election (ecosystem mismatch)' });
+    }
+
     // 2. Check if the voter has already voted in this election
     const alreadyVoted = await Vote.findOne({ voter: voterId, election: electionId });
     if (alreadyVoted) {

@@ -26,13 +26,23 @@ const populateElectionWithSeparateVotes = async (electionDoc) => {
 
 // @desc    Get all elections
 // @route   GET /api/elections
-// @access  Public
+// @access  Private
 export const getElections = async (req, res) => {
   try {
     const Election = getElectionModel();
     // Pre-load Candidate model on same DB to ensure populate works correctly
     getCandidateModel();
-    const elections = await Election.find({}).sort({ createdAt: -1 });
+
+    let filter = {};
+    if (req.user) {
+      if (req.user.role === 'admin') {
+        filter = { adminId: req.user._id };
+      } else if (req.user.role === 'voter') {
+        filter = { adminId: req.user.adminId };
+      }
+    }
+
+    const elections = await Election.find(filter).sort({ createdAt: -1 });
     
     const processedElections = [];
     for (let election of elections) {
@@ -90,6 +100,7 @@ export const createElection = async (req, res) => {
       status: 'Upcoming',
       candidates: candidates || [],
       banner: bannerUrl,
+      adminId: req.user._id,
     });
 
     const populated = await Election.findById(election._id);
@@ -121,10 +132,10 @@ export const updateElection = async (req, res) => {
     } = req.body;
 
     const Election = getElectionModel();
-    const election = await Election.findById(id);
+    const election = await Election.findOne({ _id: id, adminId: req.user._id });
 
     if (!election) {
-      return res.status(404).json({ message: 'Election not found' });
+      return res.status(404).json({ message: 'Election not found or not authorized' });
     }
 
     if (name) election.name = name;
@@ -165,10 +176,10 @@ export const toggleElectionStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const Election = getElectionModel();
-    const election = await Election.findById(id);
+    const election = await Election.findOne({ _id: id, adminId: req.user._id });
 
     if (!election) {
-      return res.status(404).json({ message: 'Election not found' });
+      return res.status(404).json({ message: 'Election not found or not authorized' });
     }
 
     // Toggle between Active & Completed
@@ -202,10 +213,10 @@ export const deleteElection = async (req, res) => {
   try {
     const { id } = req.params;
     const Election = getElectionModel();
-    const election = await Election.findByIdAndDelete(id);
+    const election = await Election.findOneAndDelete({ _id: id, adminId: req.user._id });
 
     if (!election) {
-      return res.status(404).json({ message: 'Election not found' });
+      return res.status(404).json({ message: 'Election not found or not authorized' });
     }
 
     console.log(`[DB Action] Deleted election ID '${id}'`);

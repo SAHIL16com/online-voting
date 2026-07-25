@@ -9,8 +9,8 @@ import { protect, authorize } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Public route to view candidates
-router.get('/', getCandidates);
+// Protected route to view candidates (scoped by user's adminId)
+router.get('/', protect, getCandidates);
 
 // Admin-only write routes
 router.post('/', protect, authorize('admin'), createCandidate);

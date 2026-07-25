@@ -9,7 +9,12 @@ export const CandidatesProvider = ({ children }) => {
   const fetchCandidates = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/candidates');
+      const token = localStorage.getItem('voting_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const response = await fetch('/api/candidates', { headers });
       if (response.ok) {
         const data = await response.json();
         setCandidates(data);
@@ -26,7 +31,12 @@ export const CandidatesProvider = ({ children }) => {
 
     // Poll candidates dynamically every 5 seconds to keep voter panel in sync with admin panel changes
     const interval = setInterval(() => {
-      fetch('/api/candidates')
+      const token = localStorage.getItem('voting_token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      fetch('/api/candidates', { headers })
         .then((res) => {
           if (res.ok) return res.json();
         })

@@ -3,11 +3,19 @@ import cloudinary from '../config/cloudinary.js';
 
 // @desc    Get all candidates
 // @route   GET /api/candidates
-// @access  Public
+// @access  Private
 export const getCandidates = async (req, res) => {
   try {
     const Candidate = getCandidateModel();
-    const candidates = await Candidate.find({}).sort({ createdAt: -1 });
+    let filter = {};
+    if (req.user) {
+      if (req.user.role === 'admin') {
+        filter = { adminId: req.user._id };
+      } else if (req.user.role === 'voter') {
+        filter = { adminId: req.user.adminId };
+      }
+    }
+    const candidates = await Candidate.find(filter).sort({ createdAt: -1 });
     return res.json(candidates);
   } catch (error) {
     console.error('Get Candidates Error:', error);
@@ -76,6 +84,7 @@ export const createCandidate = async (req, res) => {
       partySymbol: symbolUrl,
       votes: 0,
       status: 'Active',
+      adminId: req.user._id,
     });
 
     console.log(`[DB Action] Created candidate '${name}' in voting database`);
@@ -106,10 +115,10 @@ export const updateCandidate = async (req, res) => {
     } = req.body;
 
     const Candidate = getCandidateModel();
-    const candidate = await Candidate.findById(id);
+    const candidate = await Candidate.findOne({ _id: id, adminId: req.user._id });
 
     if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
+      return res.status(404).json({ message: 'Candidate not found or not authorized' });
     }
 
     if (name) candidate.name = name;
@@ -160,10 +169,10 @@ export const deleteCandidate = async (req, res) => {
   try {
     const { id } = req.params;
     const Candidate = getCandidateModel();
-    const candidate = await Candidate.findByIdAndDelete(id);
+    const candidate = await Candidate.findOneAndDelete({ _id: id, adminId: req.user._id });
 
     if (!candidate) {
-      return res.status(404).json({ message: 'Candidate not found' });
+      return res.status(404).json({ message: 'Candidate not found or not authorized' });
     }
 
     console.log(`[DB Action] Deleted candidate ID '${id}' from voting database`);

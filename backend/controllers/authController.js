@@ -132,6 +132,7 @@ export const loginUser = async (req, res) => {
       phone: user.phone,
       address: user.address,
       avatar: user.avatar,
+      adminId: user.adminId,
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -264,7 +265,7 @@ export const uploadAvatar = async (req, res) => {
 export const getVoters = async (req, res) => {
   try {
     const VoterModel = getUserModelByDb('test');
-    const voters = await VoterModel.find({ role: 'voter' }).sort({ createdAt: -1 });
+    const voters = await VoterModel.find({ role: 'voter', adminId: req.user._id }).sort({ createdAt: -1 });
     return res.json(voters);
   } catch (error) {
     console.error('Get Voters Error:', error);
@@ -304,7 +305,8 @@ export const createVoter = async (req, res) => {
       address: address || '',
       dob: dob || '',
       gender: gender !== 'Select gender' ? gender : '',
-      isVerified: true
+      isVerified: true,
+      adminId: req.user._id
     });
 
     console.log(`[DB Action] Admin created voter account '${email}' with Voter ID '${voterId}'`);
@@ -324,10 +326,10 @@ export const updateVoter = async (req, res) => {
     const { fullName, email, password, voterId, phone, address, dob, gender } = req.body;
 
     const VoterModel = getUserModelByDb('test');
-    const voter = await VoterModel.findById(id);
+    const voter = await VoterModel.findOne({ _id: id, adminId: req.user._id });
 
     if (!voter) {
-      return res.status(404).json({ message: 'Voter not found' });
+      return res.status(404).json({ message: 'Voter not found or not authorized' });
     }
 
     // Check unique email and voter ID if modified
@@ -372,10 +374,10 @@ export const deleteVoter = async (req, res) => {
   try {
     const { id } = req.params;
     const VoterModel = getUserModelByDb('test');
-    const voter = await VoterModel.findByIdAndDelete(id);
+    const voter = await VoterModel.findOneAndDelete({ _id: id, adminId: req.user._id });
 
     if (!voter) {
-      return res.status(404).json({ message: 'Voter not found' });
+      return res.status(404).json({ message: 'Voter not found or not authorized' });
     }
 
     console.log(`[DB Action] Deleted voter account ID '${id}'`);
