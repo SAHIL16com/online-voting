@@ -142,7 +142,7 @@ const ElectionsPage = () => {
   return (
     <div className="elections-page-container">
       <h1 className="elections-title">
-        {view === 'list' ? '2. MANAGE ELECTIONS' : view === 'edit' ? 'EDIT ELECTION' : '3. CREATE ELECTION'}
+        {view === 'list' ? 'MANAGE ELECTIONS' : view === 'edit' ? 'EDIT ELECTION' : 'CREATE ELECTION'}
       </h1>
 
       <div className="elections-main-card">

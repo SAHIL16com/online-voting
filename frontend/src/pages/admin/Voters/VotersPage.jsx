@@ -146,7 +146,7 @@ const VotersPage = () => {
   return (
     <div className="voters-page-container">
       <h1 className="voters-title">
-        {view === 'list' ? '7. VOTER MANAGEMENT' : view === 'edit' ? 'EDIT VOTER' : '10. ADD VOTER'}
+        {view === 'list' ? 'VOTER MANAGEMENT' : view === 'edit' ? 'EDIT VOTER' : 'ADD VOTER'}
       </h1>
 
       <div className="voters-main-card">

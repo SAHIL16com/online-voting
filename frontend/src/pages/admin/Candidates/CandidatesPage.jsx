@@ -139,7 +139,7 @@ const CandidatesPage = () => {
   return (
     <div className="candidates-page-container">
       <h1 className="candidates-title">
-        {view === 'list' ? '5. CANDIDATE MANAGEMENT' : view === 'edit' ? 'EDIT CANDIDATE' : '6. ADD CANDIDATE'}
+        {view === 'list' ? 'CANDIDATE MANAGEMENT' : view === 'edit' ? 'EDIT CANDIDATE' : 'ADD CANDIDATE'}
       </h1>
 
       <div className="candidates-main-card">
