@@ -39,7 +39,7 @@ const ReportsPage = () => {
 
   return (
     <div className="reports-page-container">
-      <h1 className="reports-title">10. ELECTION REPORTS & PREVIEWS</h1>
+      <h1 className="reports-title">ELECTION REPORTS & PREVIEWS</h1>
 
       <div className="reports-main-card">
         <div className="reports-filters-row" style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
