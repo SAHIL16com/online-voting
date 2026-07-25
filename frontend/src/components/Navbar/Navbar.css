@@ -105,6 +105,26 @@
   font-size: 0.9rem;
 }
 
+@media (max-width: 576px) {
+  .navbar-btn-register {
+    display: none !important;
+  }
+  
+  .brand-text {
+    font-size: 1.15rem;
+  }
+  
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .navbar-btn-login {
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
 @media (min-width: 840px) {
   .desktop-nav {
     display: flex !important;
