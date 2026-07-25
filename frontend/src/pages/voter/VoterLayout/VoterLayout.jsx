@@ -99,9 +99,27 @@ const VoterLayout = () => {
     }
   ];
 
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
   return (
     <div className="voter-container">
-      <aside className="voter-sidebar">
+      {isSidebarOpen && (
+        <div 
+          className="voter-sidebar-overlay" 
+          onClick={() => setIsSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.4)',
+            zIndex: 998,
+            backdropFilter: 'blur(2px)'
+          }}
+        />
+      )}
+      <aside className={`voter-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="voter-sidebar-top">
           <NavLink to="/" className="voter-brand">
             <div className="voter-brand-icon">
@@ -140,6 +158,32 @@ const VoterLayout = () => {
 
       <div className="voter-main-wrapper">
         <header className="voter-topbar">
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#0f172a',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '0.75rem',
+              padding: '0.25rem',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #f1f5f9',
+              display: 'none' // will toggle display via media queries
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
           <div className="voter-search-wrapper">
             <svg className="voter-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/>

@@ -273,3 +273,24 @@
   margin: 0;
   font-weight: 500;
 }
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-vector-illustration {
+    display: none; /* Hide overlapping vector illustration on mobile */
+  }
+
+  .welcome-text-group {
+    max-width: 100%;
+  }
+}

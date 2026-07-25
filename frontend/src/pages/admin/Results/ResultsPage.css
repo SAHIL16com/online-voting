@@ -304,3 +304,22 @@
   margin: 0;
   line-height: 1;
 }
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .election-select-dropdown {
+    font-size: 1.15rem;
+  }
+  
+  .results-select-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .results-top-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
