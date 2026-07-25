@@ -54,13 +54,18 @@ export const getCurrentProfile = async (token) => {
     },
   });
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.message || 'Failed to fetch user profile');
+    let message = 'Failed to fetch user profile';
+    try {
+      const data = await response.json();
+      message = data.message || message;
+    } catch (_) {}
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
-  return data;
+  return await response.json();
 };
 
 /**

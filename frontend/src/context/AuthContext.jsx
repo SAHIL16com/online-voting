@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (err) {
           console.error('Session restore failed:', err);
-          logout();
+          // Only clear credentials if the API specifically returns 401 (Unauthorized) or 403 (Forbidden)
+          if (err.status === 401 || err.status === 403) {
+            logout();
+          }
         }
       }
       setLoading(false);
